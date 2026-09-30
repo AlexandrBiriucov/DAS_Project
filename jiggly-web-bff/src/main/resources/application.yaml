@@ -1,3 +1,11 @@
 spring:
   application:
     name: jiggly-web-bff
+
+server:
+  servlet:
+    session:
+      cookie:
+        http-only: true
+        same-site: strict
+        secure: false  #will probably need to change when using https

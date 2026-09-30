@@ -8,7 +8,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;
-
+import java.util.Optional;
 @Service
 public class UserService {
     private final UserRepository userRepository;
@@ -29,11 +29,19 @@ public class UserService {
            var hash = passwordEncoder.encode(rawPassword);   // BCrypt
         //    System.out.println("STORED HASH" + hash); //see the hash 
 
-        
+
         return userRepository.save(new User(UserId.of(UUID.randomUUID()), normalizedEmail, hash));
     }
 
+
+    public Optional<User> authenticate(String email, String rawPassword) {
+    var normalizedEmail = email.trim().toLowerCase();
+    return userRepository.findByEmail(normalizedEmail)
+            .filter(user -> passwordEncoder.matches(rawPassword, user.passwordHash()));
+    }
+
     
+
 
 
 }
