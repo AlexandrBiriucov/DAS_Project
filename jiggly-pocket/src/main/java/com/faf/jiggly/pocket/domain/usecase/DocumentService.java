@@ -16,12 +16,12 @@ public class DocumentService {
     }
 
     public Document saveDocument(DocumentDraft document) {
-        var path = "/documents/" + UUID.randomUUID();
-
-        return documentRepository.save(toDocument(document, path));
+        return saveDocument(document, "/documents/" + UUID.randomUUID());
     }
 
-    
+    public Document saveDocument(DocumentDraft document, String path) {
+        return documentRepository.save(toDocument(document, path));
+    }
 
     private Document toDocument(DocumentDraft document, String path) {
         return Document.builder()
@@ -31,6 +31,5 @@ public class DocumentService {
                 .description(document.description())
                 .path(path)
                 .build();
-
     }
 }
