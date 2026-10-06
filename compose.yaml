@@ -1,0 +1,24 @@
+
+services:
+  keycloak:
+    container_name: "jiggly_auth_server"
+    image: "quay.io/keycloak/keycloak:latest"
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_FEATURES: token-exchange
+      KC_HOSTNAME: localhost
+    volumes:
+      - ./docker-volumes/keycloak:/opt/keycloak/data/import
+    ports:
+      - "8088:8080"
+    entrypoint: [ "/opt/keycloak/bin/kc.sh", "start-dev", "--import-realm", "--verbose" ]
+
+  jiggly-pocket:
+    container_name: "jiggly-pocket"
+    platform: linux/amd64
+    build:
+      context: .
+      dockerfile: jiggly-pocket/Dockerfile
+    ports:
+      - "8081:8080"

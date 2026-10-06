@@ -1,0 +1,8 @@
+# Build context is the repo root; keep it small and free of local state.
+**/target/
+.git/
+.idea/
+*.iml
+.vscode/
+docker-volumes/
+HELP.md
