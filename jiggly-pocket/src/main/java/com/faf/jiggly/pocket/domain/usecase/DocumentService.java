@@ -6,7 +6,7 @@ import com.faf.jiggly.pocket.domain.port.DocumentRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;
-
+import java.util.Optional;
 @Service
 public class DocumentService {
     private final DocumentRepository documentRepository;
@@ -21,6 +21,10 @@ public class DocumentService {
 
     public Document saveDocument(DocumentDraft document, String path) {
         return documentRepository.save(toDocument(document, path));
+    }
+
+    public Optional<Document> findById(UUID id) {
+        return documentRepository.findById(id);
     }
 
     private Document toDocument(DocumentDraft document, String path) {

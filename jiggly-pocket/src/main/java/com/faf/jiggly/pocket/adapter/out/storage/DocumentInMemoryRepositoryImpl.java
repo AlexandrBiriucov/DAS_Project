@@ -7,7 +7,7 @@ import org.springframework.stereotype.Repository;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-
+import java.util.Optional;
 @Repository
 public class DocumentInMemoryRepositoryImpl implements DocumentRepository{
 
@@ -27,8 +27,7 @@ public class DocumentInMemoryRepositoryImpl implements DocumentRepository{
     }
 
     @Override
-    public Document findById(UUID id) {
-        var documentEntity = documentMap.get(id);
-        return documentConverter.toDomain(documentEntity);
-    }
+    public Optional<Document> findById(UUID id) {
+    return Optional.ofNullable(documentMap.get(id)).map(documentConverter::toDomain);
+}
 }

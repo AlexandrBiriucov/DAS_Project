@@ -14,6 +14,13 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
 
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import java.nio.charset.StandardCharsets;
+import java.util.UUID;
+
+
 @RestController
 @RequestMapping("/files")
 public class FileController {
@@ -60,7 +67,35 @@ public class FileController {
     // }
 
 
+@GetMapping("/{id}")
+    public ResponseEntity<?> download(@PathVariable String id, HttpServletRequest request) {
+    var session = request.getSession(false);
+    if (session == null || session.getAttribute("userId") == null) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Not logged in"));
+    }
+    var userId = UserId.fromString((String) session.getAttribute("userId"));
 
+    UUID documentId;
+    try {
+        documentId = UUID.fromString(id);
+    } catch (IllegalArgumentException e) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Not found"));
+    }
+
+    var document = documentService.findById(documentId);
+    if (document.isEmpty() || !document.get().userId().equals(userId)) {
+        // same answer for "doesn't exist" and "not yours", so nobody can probe for other users' ids
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Not found"));
+    }
+
+    var bytes = fileStore.read(document.get().path());   // decrypted here, only for the owner
+
+    return ResponseEntity.ok()
+            .contentType(MediaType.APPLICATION_OCTET_STREAM)
+            .header(HttpHeaders.CONTENT_DISPOSITION,
+                    ContentDisposition.attachment().filename(document.get().title(), StandardCharsets.UTF_8).build().toString())
+            .body(bytes);
+}
 
 
     private static String cleanFilename(String original) {

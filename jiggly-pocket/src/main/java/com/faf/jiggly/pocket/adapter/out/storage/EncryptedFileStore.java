@@ -32,4 +32,15 @@ public class EncryptedFileStore {
         }
         return storedName;
     }
+
+    public byte[] read(String storedName) {
+    UUID.fromString(storedName);   // throws if it is not a UUID, so no path tricks
+    try {
+        return encryption.decrypt(Files.readAllBytes(root.resolve(storedName)));
+    } catch (IOException e) {
+        throw new UncheckedIOException("Could not read file", e);
+    }
+}
+
+
 }
