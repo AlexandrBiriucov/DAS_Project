@@ -26,13 +26,14 @@ public class EncryptionService {
         byte[] keyBytes = Base64.getDecoder().decode(base64Key);
         if (keyBytes.length != 32) {
             throw new IllegalStateException("Encryption key must be exactly 32 bytes (base64 encoded)");
-        }
-        this.key = new SecretKeySpec(keyBytes, "AES");
+            }        
+            this.key = new SecretKeySpec(keyBytes, "AES");
     }
 
     /** Returns IV + ciphertext. */
     public byte[] encrypt(byte[] plain) {
-        try {
+        try 
+        {
             byte[] iv = new byte[IV_LENGTH];
             random.nextBytes(iv);
 

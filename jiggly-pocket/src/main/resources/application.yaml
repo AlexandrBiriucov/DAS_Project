@@ -1,3 +1,19 @@
 spring:
   application:
     name: jiggly-pocket
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+server:
+  servlet:
+    session:
+      cookie:
+        http-only: true
+        same-site: strict
+        secure: false   # temporary for local http, set to true at the end
+
+jiggly:
+  encryption-key: ${JIGGLY_ENCRYPTION_KEY}
+  storage-dir: uploads
