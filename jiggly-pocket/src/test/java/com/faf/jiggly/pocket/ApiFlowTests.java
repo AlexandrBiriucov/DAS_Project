@@ -25,7 +25,9 @@ import static org.assertj.core.api.Assertions.assertThat;
                 "jiggly.encryption-key=FSC4ukfGdXLhZkfugiE+MukosyckKOospVojwqYwa1Y=",
                 "jiggly.storage-dir=target/test-uploads",
                 // tests use plain http, and a Secure cookie would not be sent over http
-                "server.servlet.session.cookie.secure=false"
+                "server.servlet.session.cookie.secure=false",
+                "spring.servlet.multipart.max-file-size=1MB",
+                "spring.servlet.multipart.max-request-size=1MB",
         })
 class ApiFlowTests {
 
@@ -254,4 +256,44 @@ class ApiFlowTests {
         assertThat(get(client, "/files/" + UUID.randomUUID()).statusCode()).isEqualTo(404);
         assertThat(get(client, "/files/not-a-uuid").statusCode()).isEqualTo(404);
     }
-}
+
+    //  validation
+
+    private HttpClient loggedInClient() throws Exception {
+        var client = newClient();
+        var email = uniqueEmail();
+        register(client, email, PASSWORD);
+        login(client, email, PASSWORD);
+        return client;
+    }
+
+    @Test
+    void textDisguisedAsImageIsRejected() throws Exception {
+        var response = upload(loggedInClient(), "evil.png", "just text, not a png".getBytes());
+        assertThat(response.statusCode()).isEqualTo(415);
+    }
+
+    @Test
+        void executableDisguisedAsTextFileIsRejected() throws Exception {
+        var fakeExe = new byte[512];
+        fakeExe[0] = 'M';
+        fakeExe[1] = 'Z';
+        var response = upload(loggedInClient(), "notes.txt", fakeExe);
+        assertThat(response.statusCode()).isEqualTo(415);
+        }
+
+    @Test
+        void realPngIsAccepted() throws Exception {
+        var png = new byte[]{(byte) 0x89, 'P', 'N', 'G', 0x0D, 0x0A, 0x1A, 0x0A,
+                0, 0, 0, 0x0D, 'I', 'H', 'D', 'R', 0, 0, 0, 1, 0, 0, 0, 1, 8, 6, 0, 0, 0};
+        var response = upload(loggedInClient(), "pixel.png", png);
+        assertThat(response.statusCode()).isEqualTo(201);
+        }
+
+    @Test
+        void tooLargeFileIsRejected() throws Exception {
+            var response = upload(loggedInClient(), "big.txt", new byte[2 * 1024 * 1024]);
+            assertThat(response.statusCode()).isEqualTo(413);
+        }
+
+    }

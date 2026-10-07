@@ -21,15 +21,21 @@ import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
 
+import com.faf.jiggly.pocket.domain.usecase.FileValidator;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+
 @RestController
 @RequestMapping("/files")
 public class FileController {
     private final DocumentService documentService;
     private final EncryptedFileStore fileStore;
+    private final FileValidator fileValidator;
 
-    public FileController(DocumentService documentService, EncryptedFileStore fileStore) {
+    
+    public FileController(DocumentService documentService, EncryptedFileStore fileStore, FileValidator fileValidator) {
         this.documentService = documentService;
         this.fileStore = fileStore;
+        this.fileValidator = fileValidator;
     }
 
     @PostMapping("/upload")
@@ -46,8 +52,17 @@ public class FileController {
 
         var userId = UserId.fromString((String) session.getAttribute("userId"));
         var title = cleanFilename(file.getOriginalFilename());
+        var bytes = file.getBytes();
 
-        var storedName = fileStore.store(file.getBytes());   // encrypted before it touches the disk
+        try {
+            fileValidator.validate(title, bytes);          // checks the real type and size
+        } catch (FileValidator.InvalidFileException e) {
+            return ResponseEntity.status(e.status()).body(Map.of("error", e.getMessage()));
+        }
+
+        var storedName = fileStore.store(bytes);   // encrypted before it touches the disk
+
+        // var storedName = fileStore.store(file.getBytes());   
 
         var draft = DocumentDraft.builder()
                 .userId(userId)
@@ -106,4 +121,12 @@ public class FileController {
         var name = original.substring(Math.max(original.lastIndexOf('/'), original.lastIndexOf('\\')) + 1);
         return name.isBlank() ? "unnamed" : name;
     }
+
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<?> tooLarge() {
+        return ResponseEntity.status(413).body(Map.of("error", "File is too large"));
+}
+
+
 }
